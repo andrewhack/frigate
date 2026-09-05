@@ -1476,7 +1476,7 @@ paths:
         - Classification
       summary: Get custom classification attributes
       description: |-
-        **Access:** Admin role required.
+        **Access:** Authenticated user with access to all cameras.
 
         Returns custom classification attributes for a given object type.
             Only includes models with classification_type set to 'attribute'.
@@ -1510,8 +1510,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
-        - frigateAdminAuth: []
-      x-required-role: admin
+        - frigateUserAuth: []
+      x-required-role: all_cameras
   /classification/{name}/train:
     get:
       tags:
@@ -2308,15 +2308,15 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
         - frigateUserAuth: []
-      x-required-role: any
-      description: '**Access:** Any authenticated user.'
+      x-required-role: camera
+      description: '**Access:** Authenticated user with access to the referenced camera.'
   /review/summarize/start/{start_ts}/end/{end_ts}:
     post:
       tags:
         - Review
       summary: Generate Review Summary
       description: |-
-        **Access:** Admin role required.
+        **Access:** Authenticated user with access to all cameras.
 
         Use GenAI to summarize review items over a period of time.
       operationId: 
@@ -2347,8 +2347,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
-        - frigateAdminAuth: []
-      x-required-role: admin
+        - frigateUserAuth: []
+      x-required-role: all_cameras
   /:
     get:
       tags:
@@ -7109,7 +7109,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/DebugReplayStartResponse'
         '400':
-          description: Invalid camera, time range, or no recordings
+          description: Invalid camera or time range
+        '404':
+          description: No recordings in the requested time range
         '409':
           description: A replay session is already active
         '422':

@@ -9,7 +9,7 @@ import NavPath from "@site/src/components/NavPath";
 
 Recordings can be enabled and are stored at `/media/frigate/recordings`. The folder structure for the recordings is `YYYY-MM-DD/HH/<camera_name>/MM.SS.mp4` in **UTC time**. These recordings are written directly from your camera stream without re-encoding. Each camera supports a configurable retention policy. Frigate chooses the largest matching retention value between the recording retention and the tracked object retention when determining if a recording should be removed.
 
-New recording segments are written from the camera stream to cache, they are only moved to disk if they match the setup recording retention policy.
+New recording segments are written from the camera stream to cache, they are only moved to disk if they pass a validation check and match the setup recording retention policy.
 
 :::tip
 
@@ -291,7 +291,7 @@ For advanced use cases, the [custom export HTTP API](../integrations/api/export-
 POST /export/custom/{camera_name}/start/{start_time}/end/{end_time}
 ```
 
-The request body accepts `ffmpeg_input_args` and `ffmpeg_output_args` to control encoding, frame rate, filters, and other FFmpeg options. If neither is provided, Frigate defaults to time-lapse output settings (25x speed, 30 FPS).
+The request body accepts `ffmpeg_input_args` and `ffmpeg_output_args` to control encoding, frame rate, filters, and other FFmpeg options. If neither is provided, Frigate defaults to time-lapse output settings (25x speed, 30 FPS) with audio removed (`-an`). When providing your own `ffmpeg_input_args`, include `-an` if you want audio stripped from the export.
 
 The following example exports a time-lapse at 60x speed with 25 FPS:
 

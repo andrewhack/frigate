@@ -39,6 +39,20 @@ To do this efficiently the following setup is required:
 
 When this is done correctly, the GPU will do the decoding and scaling which will result in a small increase in CPU usage but with better results.
 
+### How can I rotate my camera's video feed?
+
+Rotation is best done in the camera's firmware settings (usually called rotate, flip, or corridor mode) so the video arrives already rotated and no extra processing is needed. Check there first.
+
+If your camera does not support rotation, go2rtc's ffmpeg module can rotate the stream with the `#rotate` parameter (`90`, `180`, `270`, or `-90`), but this is not recommended: rotation requires transcoding (re-encoding) the video, which significantly increases CPU usage, especially for high resolution streams.
+
+```yaml
+go2rtc:
+  streams:
+    my_camera: "ffmpeg:rtsp://user:password@192.168.1.10:554/stream#video=h264#hardware#rotate=90"
+```
+
+Point the camera's inputs at the restream as described in the [restream docs](/configuration/restream.md), and swap `detect -> width` and `detect -> height` to match the rotated resolution.
+
 ### My mjpeg stream or snapshots look green and crazy
 
 This almost always means that the width/height defined for your camera are not correct. Double check the resolution with VLC or another player. Also make sure you don't have the width and height values backwards.
@@ -132,6 +146,12 @@ cameras:
       width: 1280
       height: 720
 ```
+
+### What is the `version` key in my config file?
+
+`version` records the config format that your config was last migrated to. On startup Frigate compares it against the format the running version expects, and if it is older it copies your config to `/config/backup_config.yaml`, rewrites it to the new format, and updates `version` as the final step. A config with no `version` key is assumed to predate 0.14 and is migrated from there.
+
+Frigate manages this key for you, so do not set or edit it. Raising it makes Frigate skip migrations your config still needs, and lowering it re-runs migrations against config that has already been converted. Either can leave you with a config that no longer validates.
 
 ### Why does Frigate keep creating new tracked objects for my parked car?
 

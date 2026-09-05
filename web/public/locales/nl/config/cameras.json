@@ -29,7 +29,7 @@
         },
         "listen": {
             "label": "Luistercategorieën",
-            "description": "Lijst van luistercategorie gebeurtenissen voor detectie (zoals: blaffen, band_alarm, schreeuw, praten, roepen)."
+            "description": "Lijst van luistercategorie gebeurtenissen voor detectie (zoals: blaffen, band_alarm, praten, schreeuwen)."
         },
         "filters": {
             "label": "Geluidsfilters",
@@ -52,7 +52,7 @@
         "label": "Audiotranscriptie",
         "description": "Instellingen voor live en spraakgestuurde audiotranscriptie voor gebeurtenissen en live ondertitels.",
         "enabled": {
-            "label": "Spraaktranscriptie inschakelen",
+            "label": "Transcriptie inschakelen",
             "description": "Schakel transcriptie van handmatig getriggerde audiogebeurtenissen in of uit."
         },
         "enabled_in_config": {
@@ -84,7 +84,7 @@
         "description": "Instellingen voor de detectierol om objecten te detecteren en trackers te starten.",
         "enabled": {
             "label": "Detectie inschakelen",
-            "description": "Objectdetectie voor deze camera in- of uitschakelen. Detectie moet zijn ingeschakeld om objecttracking te laten werken."
+            "description": "Objectdetectie voor deze camera in- of uitschakelen."
         },
         "height": {
             "label": "Detectiehoogte",
@@ -162,7 +162,19 @@
         }
     },
     "mqtt": {
-        "label": "MQTT"
+        "label": "MQTT",
+        "description": "MQTT‑instellingen voor het publiceren van afbeeldingen.",
+        "enabled": {
+            "label": "Verzend afbeelding",
+            "description": "Schakel het publiceren van afbeeldings‑snapshots van gedetecteerde objecten naar MQTT‑topics voor deze camera in of uit."
+        },
+        "timestamp": {
+            "label": "Tijdstempel toevoegen",
+            "description": "Plaats een tijdstempel als overlay op afbeeldingen die naar MQTT worden gepubliceerd."
+        },
+        "bounding_box": {
+            "label": "Voeg een kader toe rond gedetecteerde objecten"
+        }
     },
     "notifications": {
         "label": "Meldingen",
@@ -183,11 +195,11 @@
         }
     },
     "ffmpeg": {
-        "label": "FFmpeg",
-        "description": "FFmpeg-instellingen inclusief binaire pad, argumenten, hardwareversnellingsopties en uitvoerargumenten per rol.",
+        "label": "Streams (FFmpeg)",
+        "description": "Camera-stream-inputs en FFmpeg-opties, waaronder het pad naar het binaire bestand, argumenten, hwaccel en uitvoerargumenten per rol.",
         "path": {
             "label": "FFmpeg-pad",
-            "description": "Pad naar het te gebruiken FFmpeg-binaire bestand of een versie-alias (\"5.0\" of \"7.0\")."
+            "description": "Pad naar het te gebruiken FFmpeg-binaire bestand of een versie-alias (\"7.0\" of \"8.0\")."
         },
         "global_args": {
             "label": "FFmpeg globale argumenten",
@@ -263,12 +275,14 @@
         "quality": {
             "label": "Live kwaliteit",
             "description": "Coderingskwaliteit voor de jsmpeg-stream (1 hoogste, 31 laagste)."
-        }
+        },
+        "description": "Instellingen die door de webinterface worden gebruikt om de selectie, resolutie en kwaliteit van livestreams te regelen."
     },
     "motion": {
         "label": "Bewegingsdetectie",
         "enabled": {
-            "label": "Bewegingsdetectie inschakelen"
+            "label": "Bewegingsdetectie inschakelen",
+            "description": "Schakel bewegingsdetectie voor deze camera in of uit."
         },
         "threshold": {
             "label": "Bewegingsdrempel",
@@ -316,7 +330,8 @@
         },
         "raw_mask": {
             "label": "Onbewerkt masker"
-        }
+        },
+        "description": "Standaardinstellingen voor bewegingsdetectie voor deze camera."
     },
     "objects": {
         "label": "Objecten",
@@ -418,7 +433,8 @@
     "record": {
         "label": "Opname",
         "enabled": {
-            "label": "Opname inschakelen"
+            "label": "Opname inschakelen",
+            "description": "Opnemen in/uit schakelen voor deze camera."
         },
         "expire_interval": {
             "label": "Opruiminterval opnames",
@@ -498,6 +514,9 @@
             "max_concurrent": {
                 "label": "Maximaal aantal gelijktijdige exports",
                 "description": "Maximum aantal exporttaken dat tegelijk wordt verwerkt."
+            },
+            "chapters": {
+                "label": "Metadata hoofstuk om op te nemen in de geëxporteerde opnames"
             }
         },
         "preview": {
@@ -511,7 +530,8 @@
         "enabled_in_config": {
             "label": "Originele opnamestatus",
             "description": "Geeft aan of opname was ingeschakeld in de originele statische configuratie."
-        }
+        },
+        "description": "Instellingen opname en bewaarbeleid voor deze camera."
     },
     "review": {
         "label": "Beoordeling",
@@ -519,7 +539,8 @@
             "label": "Meldingsconfiguratie",
             "description": "Instellingen voor welke gevolgde objecten alerts genereren en hoe alerts worden bewaard.",
             "enabled": {
-                "label": "Alerts inschakelen"
+                "label": "Alerts inschakelen",
+                "description": "Schakel het genereren van waarschuwingen voor deze camera in of uit."
             },
             "labels": {
                 "label": "Meldingslabels",
@@ -542,7 +563,8 @@
             "label": "Detectieconfiguratie",
             "description": "Instellingen voor welke gevolgde objecten detecties genereren en hoe detecties worden bewaard.",
             "enabled": {
-                "label": "Detecties inschakelen"
+                "label": "Detecties inschakelen",
+                "description": "Schakel detectie‑events voor deze camera in of uit."
             },
             "labels": {
                 "label": "Detectielabels",
@@ -600,12 +622,14 @@
                 "label": "Activiteitscontextprompt",
                 "description": "Aangepaste prompt die beschrijft wat wel en niet verdachte activiteit is, als context voor GenAI-samenvattingen."
             }
-        }
+        },
+        "description": "Instellingen voor waarschuwingen, detecties en GenAI‑samenvattingen die worden gebruikt door de interface en de opslag van deze camera."
     },
     "snapshots": {
         "label": "Snapshots",
         "enabled": {
-            "label": "Snapshots inschakelen"
+            "label": "Snapshots inschakelen",
+            "description": "Schakel het opslaan van snapshots voor deze camera in of uit."
         },
         "timestamp": {
             "label": "Tijdstempel-overlay",
@@ -646,7 +670,8 @@
         "quality": {
             "label": "Snapshotkwaliteit",
             "description": "Coderingskwaliteit voor opgeslagen snapshots (0-100)."
-        }
+        },
+        "description": "Instellingen voor API‑gegenereerde snapshots van gedetecteerde objecten voor deze camera."
     },
     "timestamp_style": {
         "label": "Tijdstempelstijl",
@@ -681,7 +706,8 @@
         "effect": {
             "label": "Tijdstempeleffect",
             "description": "Visueel effect voor de tijdstempeltekst (geen, effen, schaduw)."
-        }
+        },
+        "description": "Stijlopties voor tijdstempels die worden toegepast op snapshots en de Debug‑weergave."
     },
     "semantic_search": {
         "label": "Semantisch zoeken",
@@ -712,23 +738,27 @@
                 "label": "Triggeracties",
                 "description": "Lijst van uit te voeren acties bij triggermatch (melding, sub_label, attribuut)."
             }
-        }
+        },
+        "description": "Instellingen voor semantisch zoeken, waarmee object‑embeddings worden opgebouwd en geraadpleegd om vergelijkbare items te vinden."
     },
     "face_recognition": {
         "label": "Gezichtsherkenning",
         "enabled": {
-            "label": "Gezichtsherkenning inschakelen"
+            "label": "Gezichtsherkenning inschakelen",
+            "description": "Schakel gezichtsherkenning in of uit."
         },
         "min_area": {
             "label": "Minimale gezichtsoppervlakte",
             "description": "Minimale oppervlakte (pixels) van een gedetecteerd gezichtskader om herkenning te proberen."
-        }
+        },
+        "description": "Instellingen voor gezichtsdetectie en -herkenning voor deze camera."
     },
     "lpr": {
         "label": "Kentekenherkenning",
         "description": "Instellingen voor kentekenherkenning inclusief detectiedrempels, opmaak en bekende kentekens.",
         "enabled": {
-            "label": "LPR inschakelen"
+            "label": "LPR inschakelen",
+            "description": "Schakel LPR op deze camera in of uit."
         },
         "min_area": {
             "label": "Minimale kentekenoppervlakte",
@@ -818,5 +848,9 @@
             "label": "Tijdsverschil negeren",
             "description": "Tijdsynchronisatieverschillen tussen camera en Frigate-server negeren voor ONVIF-communicatie."
         }
+    },
+    "best_image_timeout": {
+        "label": "Timeout voor het ophalen van de beste afbeelding",
+        "description": "Hoe lang er gewacht wordt op de afbeelding met de hoogste score van betrouwbaarheid"
     }
 }

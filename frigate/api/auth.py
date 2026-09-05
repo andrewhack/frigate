@@ -85,6 +85,7 @@ def require_admin_by_default():
         "/sub_labels",
         "/plus/models",
         "/recognized_license_plates",
+        "/classification/attributes",
         "/timeline",
         "/timeline/hourly",
         "/recordings/storage",
@@ -971,6 +972,7 @@ def delete_user(request: Request, username: str):
     summary="Update user password",
     description="Updates a user's password. Users can only change their own password unless they have admin role. Requires the current password to verify identity for non-admin users. Password must be at least 12 characters long. If user changes their own password, a new JWT cookie is automatically issued.",
 )
+@limiter.limit(limit_value=rateLimiter.get_limit)
 async def update_password(
     request: Request,
     username: str,
@@ -984,10 +986,11 @@ async def update_password(
     current_username = current_user.get("username")
     current_role = current_user.get("role")
 
-    # viewers can only change their own password
-    if current_role == "viewer" and current_username != username:
+    # Only admins may target another account. This has to cover every non-admin
+    # role rather than just viewer, since custom roles are arbitrary names
+    if current_role != "admin" and current_username != username:
         raise HTTPException(
-            status_code=403, detail="Viewers can only update their own password"
+            status_code=403, detail="Users can only update their own password"
         )
 
     HASH_ITERATIONS = request.app.frigate_config.auth.hash_iterations
@@ -1251,3 +1254,23 @@ async def get_allowed_cameras_for_filter(request: Request):
     all_camera_names = set(request.app.frigate_config.cameras.keys())
     roles_dict = request.app.frigate_config.auth.roles
     return User.get_allowed_cameras(role, roles_dict, all_camera_names)
+
+
+async def require_full_camera_access(
+    request: Request,
+    allowed_cameras: list[str] = Depends(get_allowed_cameras_for_filter),
+):
+    """Dependency for endpoints returning data that spans every camera.
+
+    Some responses cannot be meaningfully scoped to a subset of cameras, so
+    rather than filter them the endpoint is limited to callers who can already
+    see every camera. Admin and viewer always qualify; a custom role qualifies
+    only when its camera list covers all configured cameras.
+    """
+    all_camera_names = set(request.app.frigate_config.cameras.keys())
+
+    if not all_camera_names.issubset(allowed_cameras):
+        raise HTTPException(
+            status_code=403,
+            detail="Access to all cameras is required for this endpoint",
+        )
