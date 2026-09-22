@@ -22,6 +22,7 @@ import {
 } from "@/hooks/use-camera-previews";
 import { useTranslation } from "react-i18next";
 import { useCameraFriendlyName } from "@/hooks/use-camera-friendly-name";
+import { PreviewController } from "./PreviewController";
 
 type PreviewPlayerProps = {
   previewRef?: (ref: HTMLDivElement | null) => void;
@@ -100,20 +101,6 @@ export default function PreviewPlayer({
       {t("noPreviewFound")}
     </div>
   );
-}
-
-export abstract class PreviewController {
-  public camera = "";
-
-  constructor(camera: string) {
-    this.camera = camera;
-  }
-
-  abstract scrubToTimestamp(time: number): boolean;
-
-  abstract finishedSeeking(): void;
-
-  abstract setNewPreviewStartTime(time: number): void;
 }
 
 type PreviewVideoPlayerProps = {
@@ -249,9 +236,6 @@ function PreviewVideoPlayer({
         previewRef.current?.load();
       }, 1000);
       setChangeoverTimeout(timeout);
-
-      // we only want this to change when current preview changes
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [setCurrentHourFrame, videoSize],
   );

@@ -259,8 +259,8 @@ def detect_hailo() -> DetectionHardware | None:
 
     # the hailo runtime schedules across every attached device itself, so there
     # is nothing to address individually
-    units = [HardwareUnit(device="hailo8l:PCIe", label=os.path.basename(nodes[0]))]
-    return _hardware("hailo8l", "hailo8l", "Hailo", units)
+    units = [HardwareUnit(device="hailo:PCIe", label=os.path.basename(nodes[0]))]
+    return _hardware("hailo", "hailo", "Hailo", units)
 
 
 def detect_memryx() -> DetectionHardware | None:
@@ -271,6 +271,16 @@ def detect_memryx() -> DetectionHardware | None:
         return None
 
     return _hardware("memryx", "memryx", "MemryX MX3", units)
+
+
+def detect_deepx() -> DetectionHardware | None:
+    """Find DEEPX NPUs by their device nodes."""
+    units = _dev_units("dxrt*", "deepx:PCIe:{index}", "PCIe")
+
+    if not units:
+        return None
+
+    return _hardware("deepx", "deepx", "DEEPX NPU", units)
 
 
 def detect_rockchip() -> DetectionHardware | None:
@@ -319,6 +329,7 @@ PROBES = (
     detect_coral_usb,
     detect_hailo,
     detect_memryx,
+    detect_deepx,
     detect_intel_npu,
     detect_intel_gpu,
     detect_nvidia_gpu,

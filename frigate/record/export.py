@@ -14,7 +14,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytz  # type: ignore[import-untyped]
 from pathvalidate import sanitize_filename
@@ -36,6 +36,7 @@ from frigate.ffmpeg_presets import (
     parse_preset_hardware_acceleration_encode,
 )
 from frigate.models import Export, Previews, Recordings, ReviewSegment
+from frigate.output.preview import is_camera_preview_frame
 from frigate.util.ffmpeg import run_ffmpeg_with_progress
 from frigate.util.ownership import chown_to_runtime
 from frigate.util.recording_coverage import (
@@ -1055,7 +1056,10 @@ class RecordingExporter(threading.Thread):
             except DoesNotExist:
                 return ""
 
-            diff = max(0.0, float(self.start_time) - float(preview.start_time))
+            # start_time is a DateTimeField holding a unix timestamp
+            diff = max(
+                0.0, float(self.start_time) - float(cast(Any, preview.start_time))
+            )
             ffmpeg_cmd = [
                 "/usr/lib/ffmpeg/8.0/bin/ffmpeg",  # hardcode path for exports thumbnail due to missing libwebp support
                 "-hide_banner",
@@ -1095,7 +1099,7 @@ class RecordingExporter(threading.Thread):
             fallback_preview = None
 
             for file in sorted(os.listdir(preview_dir)):
-                if not file.startswith(file_start):
+                if not is_camera_preview_frame(file, self.camera):
                     continue
 
                 if file < start_file:

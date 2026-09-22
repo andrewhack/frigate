@@ -31,7 +31,6 @@ DEFAULT_CONFIG_FILE = os.path.join(CONFIG_DIR, "config.yml")
 DETECTOR_DEVICE_FIELDS = {
     "cpu": "num_threads",
     "rknn": "num_cores",
-    "deepstack": "api_url",
     "degirum": "location",
     "zmq": "endpoint",
 }
@@ -40,7 +39,6 @@ DETECTOR_DEVICE_FIELDS = {
 # detectors that use them are being reworked, so they are dropped rather than
 # carried over.
 DROPPED_DETECTOR_OPTIONS = {
-    "deepstack": ["api_timeout", "api_key"],
     "degirum": ["zoo", "token"],
     "zmq": ["request_timeout_ms", "linger_ms"],
 }
@@ -170,7 +168,20 @@ def migrate_frigate_config(config_file: str):
     # version and still use the pre-models detectors and model keys
     needs_models = "detectors" in config or "model" in config
 
-    if previous_version == CURRENT_CONFIG_VERSION and not needs_models:
+    # likewise, it may already be on the models list and still name the hailo
+    # detector by its old key
+    needs_detector_rename = any(
+        isinstance(device, str) and device.partition(":")[0] == "hailo8l"
+        for model in (config.get("models") or [])
+        if isinstance(model, dict)
+        for device in (model.get("devices") or [])
+    )
+
+    if (
+        previous_version == CURRENT_CONFIG_VERSION
+        and not needs_models
+        and not needs_detector_rename
+    ):
         logger.info("frigate config does not need migration...")
         return
 
@@ -241,6 +252,12 @@ def migrate_frigate_config(config_file: str):
     if needs_models:
         logger.info("Migrating frigate detectors and model to models...")
         new_config = migrate_models(new_config)
+        with open(config_file, "w") as f:
+            yaml.dump(new_config, f)
+
+    if needs_detector_rename:
+        logger.info("Migrating renamed frigate detectors...")
+        new_config = rename_hailo_detector(new_config)
         with open(config_file, "w") as f:
             yaml.dump(new_config, f)
 
@@ -777,9 +794,95 @@ def migrate_018_0(config: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]
     return new_config
 
 
+def rename_hailo_detector(
+    config: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Rename the hailo8l detector, which drives every Hailo device.
+
+    Args:
+        config: The loaded config
+
+    Returns:
+        The config with every models entry naming the detector 'hailo'
+    """
+    new_config = config.copy()
+
+    for model in new_config.get("models") or []:
+        if not isinstance(model, dict):
+            continue
+
+        devices = model.get("devices")
+
+        if not isinstance(devices, list):
+            continue
+
+        # assigned per index so ruamel keeps the comments on the list
+        for index, device in enumerate(devices):
+            if not isinstance(device, str):
+                continue
+
+            detector, separator, rest = device.partition(":")
+
+            if detector == "hailo8l":
+                devices[index] = f"hailo{separator}{rest}"
+
+    return new_config
+
+
+def _camera_enables_transcription(camera: dict[str, Any]) -> bool:
+    """Whether a camera or one of its profiles turns audio transcription on."""
+    sections = [camera.get("audio_transcription")]
+    profiles = camera.get("profiles")
+
+    if isinstance(profiles, dict):
+        for profile in profiles.values():
+            if isinstance(profile, dict):
+                sections.append(profile.get("audio_transcription"))
+
+    return any(
+        isinstance(section, dict) and section.get("enabled") for section in sections
+    )
+
+
+def _migrate_transcription_language(config: dict[str, Any]) -> None:
+    """Pin English for configs written before the language default became auto.
+
+    audio_transcription.language used to default to "en", so a config that
+    turned transcription on without naming a language was transcribing English.
+    The default is now "auto" (let the model detect), which is better for new
+    users but would silently change behavior for existing ones, so write the old
+    value explicitly for anyone actually using the feature.
+    """
+    transcription = config.get("audio_transcription")
+
+    if isinstance(transcription, dict) and "language" in transcription:
+        # named a language already, so nothing was relying on the default
+        return
+
+    enabled = isinstance(transcription, dict) and bool(transcription.get("enabled"))
+
+    if not enabled:
+        enabled = any(
+            _camera_enables_transcription(camera)
+            for camera in config.get("cameras", {}).values()
+            if isinstance(camera, dict)
+        )
+
+    if not enabled:
+        return
+
+    if not isinstance(transcription, dict):
+        # a camera enabled it without a global section, which still picked up
+        # the global default
+        transcription = {}
+        config["audio_transcription"] = transcription
+
+    transcription["language"] = "en"
+
+
 def migrate_019_0(config: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Handle migrating Frigate config to 0.19-0."""
-    new_config = config.copy()
+    new_config = rename_hailo_detector(config)
 
     _migrate_birdseye_mode(new_config.get("birdseye"))
 
@@ -792,6 +895,8 @@ def migrate_019_0(config: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]
                 _migrate_birdseye_mode(profile.get("birdseye"))
 
         new_config["cameras"][name] = camera_config
+
+    _migrate_transcription_language(new_config)
 
     new_config["version"] = "0.19-0"
     return new_config
@@ -824,6 +929,11 @@ def migrate_models(config: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any
         detector = detector or {}
         detector_type = detector.get("type", "cpu")
         device = detector.get(DETECTOR_DEVICE_FIELDS.get(detector_type, "device"))
+
+        # hailo8l named one device, but the detector drives every Hailo device
+        if detector_type == "hailo8l":
+            detector_type = "hailo"
+
         device_string = detector_type if device is None else f"{detector_type}:{device}"
 
         # repeating a device now means running an extra inference process on it,

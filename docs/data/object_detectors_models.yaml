@@ -36,13 +36,13 @@ edgeTPU:
             height: 320 # <--- should match the imgsize of the model, typically 320
             path: /config/model_cache/yolov9-s-relu6-best_320_int8_edgetpu.tflite
             labelmap_path: /config/labels-coco17.txt
-hailo8l:
-  title: Hailo-8/Hailo-8L
+hailo:
+  title: Hailo
   models:
     - key: yolo
       label: YOLO
       recommended: true
-      download: If no custom model path or URL is provided, the Hailo detector automatically downloads the default model (YOLOv6n) from the Hailo Model Zoo on first startup based on the detected hardware. Once cached under `/config/model_cache/hailo`, the model works fully offline.
+      download: If no custom model path or URL is provided, the Hailo detector automatically downloads the default model (YOLOv6n) from the Hailo Model Zoo on first startup, choosing the build that matches the attached device. Once cached under `/config/model_cache`, the model works fully offline.
       ui: |-
         Navigate to **Settings > System > Detection models** and select **Hailo** from the **Hardware** dropdown. Then, on the same model, open the **Custom Model** tab and configure the model settings:
 
@@ -60,7 +60,7 @@ hailo8l:
       yaml: |-
         models:
           - devices:
-              - hailo8l:PCIe
+              - hailo:PCIe
             width: 320
             height: 320
             input_tensor: nhwc
@@ -101,7 +101,7 @@ hailo8l:
       yaml: |-
         models:
           - devices:
-              - hailo8l:PCIe
+              - hailo:PCIe
             width: 300
             height: 300
             input_tensor: nhwc
@@ -824,24 +824,6 @@ cpu:
         models:
           - devices:
               - cpu:3
-deepstack:
-  title: DeepStack / CodeProject.AI
-  models:
-    - key: yolo
-      label: YOLO
-      recommended: true
-      download: This detector runs object detection over the network against a CodeProject.AI or DeepStack server, so no model is downloaded into Frigate itself. Visit the [CodeProject.AI official website](https://www.codeproject.com/Articles/5322557/CodeProject-AI-Server-AI-the-easy-way) to download and install the AI server on your preferred device (e.g. Raspberry Pi, Nvidia Jetson, or other compatible hardware) before configuring the detector.
-      ui: |-
-        Navigate to **Settings > System > Detection models** and add a model. The CodeProject.AI server is not reported by the hardware probe, so set `devices` to `deepstack:http://<your_codeproject_ai_server_ip>:<port>/v1/vision/detection` in YAML.
-
-        | Field         | Value                                                                  |
-        | ------------- | ---------------------------------------------------------------------- |
-        | **API URL**   | `http://<your_codeproject_ai_server_ip>:<port>/v1/vision/detection`    |
-        | **API Timeout** | `0.1` (seconds)                                                      |
-      yaml: |-
-        models:
-          - devices:
-              - deepstack:http://<your_codeproject_ai_server_ip>:<port>/v1/vision/detection
 memryx:
   title: MemryX
   models:
@@ -985,6 +967,65 @@ memryx:
             # The .zip file must contain:
             # ├── ssdlite_mobilenet.dfp          (a file ending with .dfp)
             # └── ssdlite_mobilenet_post.onnx    (optional; only if the model includes a cropped post-processing network)
+deepx:
+  title: DEEPX NPU
+  models:
+    - key: yolo
+      label: YOLO
+      recommended: true
+      download: No model is bundled with Frigate. Download a pre-compiled YOLO `.dxnn` model from the [DEEPX ModelZoo](https://developer.deepx.ai/modelzoo) or compile your own with DX-COM, then bind-mount it into the container and point the model's `path` at it. The recommended model is `yolox-s_640x640_ppu.dxnn`. Its Post-Processing Unit (PPU) compile moves candidate selection onto the NPU, which makes it the fastest ModelZoo model measured through Frigate (about 13 ms on a DX-M1). The output layout is read from the compiled model, so anchor-based, anchor-free, NMS-in-head and PPU models (anchor-based or anchor-free) all need no extra configuration; prefer a `PPU` variant whenever the ModelZoo offers one. PPU models must be compiled with DX-COM 2.4.0 or later, which writes the head layout Frigate reads into the file.
+      ui: |-
+        Navigate to **Settings > System > Detection models** and select **DEEPX NPU** from the **Hardware** dropdown. Then, on the same model, open the **Custom Model** tab and configure:
+
+        | Field                                    | Value                                                |
+        | ---------------------------------------- | ---------------------------------------------------- |
+        | **Custom object detector model path**    | `/config/model_cache/deepx/yolox-s_640x640_ppu.dxnn` |
+        | **Label map for custom object detector** | `/labelmap/coco-80.txt`                              |
+        | **Object detection model input width**   | `640`                                                |
+        | **Object detection model input height**  | `640`                                                |
+        | **Model Input Pixel Color Format**       | `rgb` (Frigate's default value)                      |
+        | **Model Input Tensor Shape**             | `nhwc` (Frigate's default value)                     |
+        | **Model Input D Type**                   | `int` (Frigate's default value)                      |
+        | **Object Detection Model Type**          | `yolo-generic`                                       |
+
+        Quantization is baked into the compiled model, so no normalization is applied on the host and the input defaults do not need to be overridden.
+      yaml: |-
+        models:
+          - devices:
+              - deepx:PCIe:0
+            path: /config/model_cache/deepx/yolox-s_640x640_ppu.dxnn
+            labelmap_path: /labelmap/coco-80.txt
+            model_type: yolo-generic
+            width: 640
+            height: 640
+    - key: yolox
+      label: YOLOX
+      recommended: false
+      download: No model is bundled with Frigate. Download a pre-compiled YOLOX `.dxnn` model from the [DEEPX ModelZoo](https://developer.deepx.ai/modelzoo), then bind-mount it into the container and point the model's `path` at it. The `_ppu` variant is faster and also works with the `yolo-generic` model type; the plain export needs `yolox` so its raw head is decoded.
+      ui: |-
+        Navigate to **Settings > System > Detection models** and select **DEEPX NPU** from the **Hardware** dropdown. Then, on the same model, open the **Custom Model** tab and configure:
+
+        | Field                                    | Value                                    |
+        | ---------------------------------------- | ---------------------------------------- |
+        | **Custom object detector model path**    | `/config/model_cache/deepx/yolox-s_640x640.dxnn`|
+        | **Label map for custom object detector** | `/labelmap/coco-80.txt`                  |
+        | **Object detection model input width**   | `640`                                    |
+        | **Object detection model input height**  | `640`                                    |
+        | **Model Input Pixel Color Format**       | `rgb` (Frigate's default value)          |
+        | **Model Input Tensor Shape**             | `nhwc` (Frigate's default value)         |
+        | **Model Input D Type**                   | `int` (Frigate's default value)          |
+        | **Object Detection Model Type**          | `yolox`                                  |
+
+        The width and height must match the resolution the `.dxnn` file was compiled for.
+      yaml: |-
+        models:
+          - devices:
+              - deepx:PCIe:0
+            path: /config/model_cache/deepx/yolox-s_640x640.dxnn
+            labelmap_path: /labelmap/coco-80.txt
+            model_type: yolox
+            width: 640
+            height: 640
 tensorrt:
   title: TensorRT
   models:

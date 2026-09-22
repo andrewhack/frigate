@@ -170,7 +170,7 @@ class TestAccelerators(HardwareProbeTestCase):
     def test_hailo_is_found_by_its_device_node(self):
         write(os.path.join(self.dev_root, "hailo0"))
 
-        self.assertEqual(self.probe()["hailo8l"].units[0].device, "hailo8l:PCIe")
+        self.assertEqual(self.probe()["hailo"].units[0].device, "hailo:PCIe")
 
     def test_each_memryx_node_is_a_unit(self):
         write(os.path.join(self.dev_root, "memx0"))
@@ -183,6 +183,26 @@ class TestAccelerators(HardwareProbeTestCase):
             ["memryx:PCIe:0", "memryx:PCIe:1"],
         )
         self.assertFalse(memryx.unlimited)
+
+    def test_each_deepx_node_is_a_unit(self):
+        write(os.path.join(self.dev_root, "dxrt0"))
+        write(os.path.join(self.dev_root, "dxrt1"))
+
+        deepx = self.probe()["deepx"]
+
+        self.assertEqual(
+            [unit.device for unit in deepx.units],
+            ["deepx:PCIe:0", "deepx:PCIe:1"],
+        )
+
+    def test_a_deepx_npu_is_unlimited(self):
+        # the host daemon multiplexes, so one module takes several processes
+        write(os.path.join(self.dev_root, "dxrt0"))
+
+        self.assertTrue(self.probe()["deepx"].unlimited)
+
+    def test_no_deepx_is_reported_without_a_node(self):
+        self.assertNotIn("deepx", self.probe())
 
     def test_a_supported_rockchip_soc_is_reported(self):
         write(

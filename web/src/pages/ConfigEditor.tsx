@@ -81,7 +81,7 @@ function ConfigEditor() {
           "Unknown error";
 
         setError(errorMessage);
-        throw new Error(errorMessage);
+        throw new Error(errorMessage, { cause: error });
       }
     },
     [editorRef, t],
@@ -102,7 +102,7 @@ function ConfigEditor() {
     try {
       await onHandleSaveConfig("saveonly");
       setRestartDialogOpen(true);
-    } catch (error) {
+    } catch {
       // If save fails, error is already set in onHandleSaveConfig, no dialog opens
     }
   }, [onHandleSaveConfig]);
@@ -123,7 +123,7 @@ function ConfigEditor() {
         hover: true,
         completion: true,
         validate: true,
-        format: true,
+        format: { enable: true },
         schemas: [
           {
             uri: `${apiHost}api/config/schema.json`,
@@ -287,6 +287,7 @@ function ConfigEditor() {
             </Button>
             <Button
               size="sm"
+              disabled={!hasChanges}
               className="flex items-center gap-2"
               aria-label={t("saveAndRestart")}
               onClick={handleSaveAndRestart}
@@ -299,6 +300,7 @@ function ConfigEditor() {
             </Button>
             <Button
               size="sm"
+              disabled={!hasChanges}
               className="flex items-center gap-2"
               aria-label={t("saveOnly")}
               onClick={() => onHandleSaveConfig("saveonly")}

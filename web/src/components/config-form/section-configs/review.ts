@@ -7,6 +7,10 @@ const review: SectionConfigOverrides = {
       {
         key: "record-disabled",
         messageKey: "configMessages.review.recordDisabled",
+        runtimeOverride: {
+          section: "record",
+          messageKey: "configMessages.review.recordRuntimeDisabled",
+        },
         severity: "warning",
         condition: (ctx) => {
           if (ctx.level === "camera" && ctx.fullCameraConfig) {
@@ -18,6 +22,10 @@ const review: SectionConfigOverrides = {
       {
         key: "detect-disabled",
         messageKey: "configMessages.review.detectDisabled",
+        runtimeOverride: {
+          section: "detect",
+          messageKey: "configMessages.review.detectRuntimeDisabled",
+        },
         severity: "info",
         condition: (ctx) => {
           if (ctx.level === "camera" && ctx.fullCameraConfig) {
@@ -64,12 +72,16 @@ const review: SectionConfigOverrides = {
         field: "genai.image_source",
         messageKey:
           "configMessages.review.genaiImageSourceRecordingsRecordDisabled",
+        runtimeOverride: {
+          section: "record",
+          messageKey:
+            "configMessages.review.genaiImageSourceRecordingsRecordRuntimeDisabled",
+        },
         severity: "warning",
         position: "after",
         condition: (ctx) => {
           const genai = ctx.formData?.genai as
-            | Record<string, unknown>
-            | undefined;
+            Record<string, unknown> | undefined;
           if (genai?.image_source !== "recordings") return false;
           if (ctx.level === "camera" && ctx.fullCameraConfig) {
             return ctx.fullCameraConfig.record?.enabled === false;
@@ -83,6 +95,7 @@ const review: SectionConfigOverrides = {
       "detections.labels": "/configuration/review/#alerts-and-detections",
       genai: "/configuration/genai/genai_review",
       "genai.image_source": "/configuration/genai/genai_review#image-source",
+      "genai.frame_mode": "/configuration/genai/genai_review#frame-mode",
       "genai.additional_concerns":
         "/configuration/genai/genai_review#additional-concerns",
     },
@@ -137,6 +150,11 @@ const review: SectionConfigOverrides = {
         image_source: {
           "ui:options": {
             enumI18nPrefix: "review.imageSource",
+          },
+        },
+        frame_mode: {
+          "ui:options": {
+            enumI18nPrefix: "review.frameMode",
           },
         },
       },

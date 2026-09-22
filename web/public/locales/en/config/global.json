@@ -348,7 +348,7 @@
     },
     "roles": {
       "label": "Roles",
-      "description": "GenAI roles (chat, descriptions, embeddings); one provider per role."
+      "description": "GenAI roles (chat, descriptions, embeddings, transcribe); one provider per role. Only chat, descriptions, and embeddings are granted by default; transcribe must be listed explicitly."
     },
     "provider_options": {
       "label": "Provider options",
@@ -1028,6 +1028,10 @@
         "label": "Preferred language",
         "description": "Preferred language to request from the GenAI provider for generated responses."
       },
+      "frame_mode": {
+        "label": "Frame mode",
+        "description": "How frames are presented to the model. 'frames' sends the prompt followed by the frames, which suits models that track a sequence well on their own. 'annotated_frames' labels each frame and interleaves notes derived from object tracking, which helps models that lose track of activity that repeats or reverses."
+      },
       "response_style": {
         "label": "Response style",
         "description": "Writing style preset for generated review descriptions. Presets adjust the tone and level of detail of the user-facing title, summary, and scene description; 'default' leaves the built-in prompt unchanged."
@@ -1127,7 +1131,11 @@
     },
     "language": {
       "label": "Transcription language",
-      "description": "Language code used for transcription/translation (for example 'en' for English). See https://whisper-api.com/docs/languages/ for supported language codes."
+      "description": "Language code used for transcription/translation (for example 'en' for English), or 'auto' to let the model detect it. See https://whisper-api.com/docs/languages/ for supported language codes."
+    },
+    "model": {
+      "label": "Audio transcription model or GenAI provider name",
+      "description": "The transcription backend: 'whisper' for Frigate's built-in local models, or the name of a GenAI provider with the transcribe role."
     },
     "device": {
       "label": "Transcription device",

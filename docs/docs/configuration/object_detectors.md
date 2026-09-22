@@ -22,8 +22,9 @@ Frigate supports multiple different detectors that work on different types of ha
 **Most Hardware**
 
 - [Coral EdgeTPU](#edge-tpu-detector): The Google Coral EdgeTPU is available in USB, Mini PCIe, and m.2 formats allowing for a wide range of compatibility with devices.
-- [Hailo](#hailo-8): The Hailo8 and Hailo8L AI Acceleration module is available in m.2 format with a HAT for RPi devices, offering a wide range of compatibility with devices.
+- [Hailo](#hailo): The Hailo-8, Hailo-8L and Hailo-8R AI Acceleration modules are available in m.2 format with a HAT for RPi devices, offering a wide range of compatibility with devices.
 - <CommunityBadge /> [MemryX](#memryx-mx3): The MX3 Acceleration module is available in m.2 format, offering broad compatibility across various platforms.
+- <CommunityBadge /> [DEEPX](#deepx-npu): The DEEPX NPU is available in m.2 format and as a HAT+ for the Raspberry Pi 5, offering broad compatibility across various platforms.
 
 **AMD**
 
@@ -285,9 +286,9 @@ models:
 
 ---
 
-## Hailo-8
+## Hailo
 
-This detector is available for use with both Hailo-8 and Hailo-8L AI Acceleration Modules. The integration automatically detects your hardware architecture via the Hailo CLI and selects the appropriate default model if no custom model is specified.
+This detector is available for use with the Hailo-8, Hailo-8L and Hailo-8R AI Acceleration Modules. The integration identifies which of them is attached and selects the matching default model if no custom model is specified.
 
 See the [installation docs](../frigate/installation.md#hailo-8) for information on configuring the Hailo hardware.
 
@@ -308,11 +309,11 @@ The HailoRT runtime is not part of the Frigate image. It is downloaded and insta
 When configuring the Hailo detector, you have two options to specify the model: a local **path** or a **URL**.
 If both are provided, the detector will first check for the model at the given local path. If the file is not found, it will download the model from the specified URL. The model file is cached under `/config/model_cache/hailo`.
 
-<ModelConfigDropdown detectorTitle="Hailo-8/Hailo-8L" models={objectDetectorsModels.hailo8l.models} />
+<ModelConfigDropdown detectorTitle="Hailo" models={objectDetectorsModels.hailo.models} />
 
 For additional ready-to-use models, please visit: https://github.com/hailo-ai/hailo_model_zoo
 
-Hailo8 supports all models in the Hailo Model Zoo that include HailoRT post-processing. You're welcome to choose any of these pre-configured models for your implementation.
+Hailo supports all models in the Hailo Model Zoo that include HailoRT post-processing. You're welcome to choose any of these pre-configured models for your implementation.
 
 > **Note:**
 > The config.path parameter can accept either a local file path or a URL ending with .hef. When provided, the detector will first check if the path is a local file path. If the file exists locally, it will use it directly. If the file is not found locally or if a URL was provided, it will attempt to download the model from the specified URL.
@@ -362,7 +363,7 @@ Intel NPUs cannot be used under Home Assistant OS, which does not include the NP
 
 :::warning
 
-The network-based detectors (Deepstack and the Apple Silicon client) are being reworked. Their extra options no longer have a place in the config, so only the endpoint carried in the device string is honored right now: Deepstack ignores `api_key` and `api_timeout`, and the Apple Silicon client ignores `request_timeout_ms` and `linger_ms`. Anything else is dropped when your config is migrated.
+The Apple Silicon detector client is being reworked. Its extra options no longer have a place in the config, so only the endpoint carried in the device string is honored right now, and `request_timeout_ms` and `linger_ms` are ignored. Anything else is dropped when your config is migrated.
 
 :::
 
@@ -540,30 +541,6 @@ A TensorFlow Lite model is provided in the container at `/cpu_model.tflite` and 
 
 When using CPU detectors, you can add one CPU detector per camera. Adding more detectors than the number of cameras should not improve performance.
 
-## Deepstack / CodeProject.AI Server Detector
-
-:::warning
-
-The network-based detectors (Deepstack and the Apple Silicon client) are being reworked. Their extra options no longer have a place in the config, so only the endpoint carried in the device string is honored right now: Deepstack ignores `api_key` and `api_timeout`, and the Apple Silicon client ignores `request_timeout_ms` and `linger_ms`. Anything else is dropped when your config is migrated.
-
-:::
-
-The Deepstack / CodeProject.AI Server detector for Frigate allows you to integrate Deepstack and CodeProject.AI object detection capabilities into Frigate. CodeProject.AI and DeepStack are open-source AI platforms that can be run on various devices such as the Raspberry Pi, Nvidia Jetson, and other compatible hardware. It is important to note that the integration is performed over the network, so the inference times may not be as fast as native Frigate detectors, but it still provides an efficient and reliable solution for object detection and tracking.
-
-### Setup {#setup-deepstack}
-
-To get started with CodeProject.AI, visit their [official website](https://www.codeproject.com/Articles/5322557/CodeProject-AI-Server-AI-the-easy-way) to follow the instructions to download and install the AI server on your preferred device. Detailed setup instructions for CodeProject.AI are outside the scope of the Frigate documentation.
-
-To integrate CodeProject.AI into Frigate, configure the detector as follows:
-
-### Configuration {#configuration-deepstack}
-
-<ModelConfigDropdown detectorTitle="DeepStack" models={objectDetectorsModels.deepstack.models} />
-
-Replace `<your_codeproject_ai_server_ip>` and `<port>` with the IP address and port of your CodeProject.AI server.
-
-To verify that the integration is working correctly, start Frigate and observe the logs for any error messages related to CodeProject.AI. Additionally, you can check the Frigate web interface to see if the objects detected by CodeProject.AI are being displayed and tracked properly.
-
 # Community Supported Detectors
 
 ## MemryX MX3
@@ -633,6 +610,63 @@ For detailed instructions on compiling models, refer to the [MemryX Compiler](ht
 # ├── yolonas.dfp          (a file ending with .dfp)
 # └── yolonas_post.onnx    (optional; only if the model includes a cropped post-processing network)
 ```
+
+---
+
+## DEEPX NPU
+
+This detector is available for use with the DEEPX NPU, both the DX-M1 M.2 module and the DX-M1M on the Sixfab AI HAT+ for the Raspberry Pi 5. The configuration below applies unchanged to either form factor. DEEPX NPU support in Frigate is developed and maintained by [Sixfab](https://sixfab.com).
+
+See the [installation docs](../frigate/installation.md#deepx-npu) for information on installing the DEEPX kernel driver and runtime on the host and passing the NPU through to the container.
+
+To run a model on a DEEPX NPU, list a `deepx` device on that model.
+
+:::info
+
+The DX-RT Python bindings are not part of the Frigate image. They are downloaded and installed into `/config/.local` the first time a DEEPX device is configured, verified against pinned checksums, and updated automatically when a Frigate release pins a new version. If the container has no internet access, see [Detector runtimes](/frigate/network_requirements#detector-runtimes) for how to provide the files yourself.
+
+:::
+
+### Configuration {#configuration-deepx}
+
+<ModelConfigDropdown detectorTitle="DEEPX" models={objectDetectorsModels.deepx.models} />
+
+Frigate does not bundle a model for this detector. Models must be compiled to DEEPX's `.dxnn` format. Two model types are supported:
+
+- `yolo-generic` for YOLO object detection models, the recommended default. The detector reads the model's output layout from the compiled file, so anchor-based, anchor-free and NMS-in-head models all work with the same configuration, as do models compiled with DEEPX's Post-Processing Unit (PPU) support.
+- `yolox` for YOLOX models compiled without PPU support, whose raw head needs Frigate's YOLOX decoder. A YOLOX model compiled with PPU support works under either `yolox` or `yolo-generic`.
+
+The quickest way to get one is the [DEEPX ModelZoo](https://developer.deepx.ai/modelzoo), which publishes pre-compiled `.dxnn` files for a range of YOLO object detection models. Download the `.dxnn`, bind-mount it into the container, and point the model's `path` at it. Alternatively, compile your own model with the DX-COM compiler. The recommended starting point is `yolox-s_640x640_ppu.dxnn`, the fastest ModelZoo model measured through Frigate:
+
+```yaml
+models:
+  - devices:
+      - deepx:PCIe:0
+    path: /config/model_cache/deepx/yolox-s_640x640_ppu.dxnn
+    labelmap_path: /labelmap/coco-80.txt
+    model_type: yolo-generic
+    width: 640
+    height: 640
+```
+
+For PPU models, use a `.dxnn` compiled with DX-COM 2.4.0 or later. Frigate reads the PPU head layout the compiler writes into the file and refuses to load a PPU model without it.
+
+`model_type` must be set to `yolo-generic` or `yolox` to match the model; `yolo-generic` is the recommended default unless the model is a raw YOLOX export. Frigate defaults it to `ssd`, which this detector does not support, so the detector refuses to start on a model that leaves it unset.
+
+`width` and `height` must match the resolution the model was compiled for. Quantization parameters are baked into the `.dxnn` file at compile time, so no normalization is applied on the host and Frigate's default `input_tensor`, `input_pixel_format`, and `input_dtype` values do not need to be overridden.
+
+A DEEPX device is `PCIe:<index>`, as reported on the detector settings page. The NPU daemon multiplexes across processes, so the same device may be listed more than once to run additional inference processes against it:
+
+```yaml
+models:
+  - devices:
+      - deepx:PCIe:0
+      - deepx:PCIe:0
+```
+
+#### Label maps
+
+The object detection models in the DEEPX ModelZoo are trained on the standard 80-class COCO label set, so `labelmap_path` must be set to `/labelmap/coco-80.txt`. Frigate's default label map uses an extended 91-class COCO scheme, and leaving it in place will cause detections to be reported as the wrong object type. For `yolo-generic` models the label map is also what the detector uses to tell the output layout, so a label map with the wrong number of classes is reported as an error at startup.
 
 ---
 
